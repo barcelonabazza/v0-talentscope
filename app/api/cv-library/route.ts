@@ -1,26 +1,22 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getCVLibrary, addCVToLibrary, deleteCVFromLibrary } from "@/lib/cv-data"
+import { getLibraryCVs, getLibraryStatus, deleteCVFromLibrary } from "@/lib/cv-data"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const library = getCVLibrary()
-    console.log(`Returning ${library.length} CVs from library`)
-    return NextResponse.json({ cvs: library })
+    const { searchParams } = new URL(request.url)
+    const includeStats = searchParams.get("stats") === "true"
+
+    const cvs = getLibraryCVs()
+    const response: any = { cvs }
+
+    if (includeStats) {
+      response.stats = getLibraryStatus()
+    }
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error("Error fetching CV library:", error)
     return NextResponse.json({ error: "Failed to fetch CV library" }, { status: 500 })
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const cvData = await request.json()
-    console.log(`Adding CV to library: ${cvData.name}`)
-    addCVToLibrary(cvData)
-    return NextResponse.json({ success: true, message: "CV added to library" })
-  } catch (error) {
-    console.error("Error adding CV to library:", error)
-    return NextResponse.json({ error: "Failed to add CV to library" }, { status: 500 })
   }
 }
 
@@ -33,16 +29,15 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "CV ID is required" }, { status: 400 })
     }
 
-    console.log(`Deleting CV from library: ${id}`)
-    const success = deleteCVFromLibrary(id)
+    const deleted = deleteCVFromLibrary(id)
 
-    if (!success) {
+    if (!deleted) {
       return NextResponse.json({ error: "CV not found" }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, message: "CV deleted from library" })
+    return NextResponse.json({ success: true, message: "CV deleted successfully" })
   } catch (error) {
-    console.error("Error deleting CV from library:", error)
-    return NextResponse.json({ error: "Failed to delete CV from library" }, { status: 500 })
+    console.error("Error deleting CV:", error)
+    return NextResponse.json({ error: "Failed to delete CV" }, { status: 500 })
   }
 }

@@ -1,89 +1,47 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getCVById, getDesignTemplate } from "@/lib/cv-data"
+import { getCVById } from "@/lib/cv-data"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params
 
-    console.log(`Download request for CV ID: ${id}`)
-
     if (!id) {
-      console.error("No CV ID provided")
-      return new NextResponse("CV ID is required", { status: 400 })
+      return NextResponse.json({ error: "CV ID is required" }, { status: 400 })
     }
 
-    // Get CV from library
-    const cv = getCVById(id)
-
-    if (!cv) {
-      console.error(`CV not found for ID: ${id}`)
-      return new NextResponse("CV not found", { status: 404 })
+    // Get CV data
+    const cvData = getCVById(id)
+    if (!cvData) {
+      return NextResponse.json({ error: "CV not found" }, { status: 404 })
     }
 
-    console.log(`Found CV: ${cv.name} (type: ${cv.type})`)
+    // Generate HTML content for the CV
+    const htmlContent = generateCVHTML(cvData)
 
-    // For uploaded CVs, return the original PDF
-    if (cv.type === "uploaded" && cv.pdfData) {
-      console.log("Returning uploaded PDF data")
-      const pdfBuffer = Buffer.from(cv.pdfData, "base64")
-
-      return new NextResponse(pdfBuffer, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="${cv.name.replace(/\s+/g, "_")}_CV.pdf"`,
-          "Cache-Control": "public, max-age=3600",
-        },
-      })
-    }
-
-    // For generated CVs, create HTML that can be printed to PDF
-    console.log("Generating HTML for generated CV")
-    const seed = Number.parseInt(id.split("-")[0]) || Date.now()
-    const template = getDesignTemplate(seed)
-
-    const htmlContent = generatePrintableHTML(cv, template)
-
+    // Return HTML file that will auto-trigger print dialog
     return new NextResponse(htmlContent, {
       headers: {
         "Content-Type": "text/html",
-        "Content-Disposition": `attachment; filename="${cv.name.replace(/\s+/g, "_")}_CV.html"`,
-        "Cache-Control": "public, max-age=3600",
+        "Content-Disposition": `attachment; filename="${cvData.name.replace(/\s+/g, "_")}_CV.html"`,
       },
     })
   } catch (error) {
-    console.error("Error in download-cv route:", error)
-    return new NextResponse(`Internal server error: ${error.message}`, { status: 500 })
+    console.error("Error downloading CV:", error)
+    return NextResponse.json({ error: "Failed to download CV" }, { status: 500 })
   }
 }
 
-function generatePrintableHTML(cv: any, template: any): string {
-  const {
-    name,
-    role,
-    email,
-    phone,
-    location,
-    linkedin,
-    github,
-    portfolio,
-    summary,
-    skills = [],
-    experience = [],
-    education = [],
-    languages = [],
-    certifications = [],
-    profileImageUrl,
-  } = cv
-
+function generateCVHTML(cvData: any): string {
   return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${name} - CV</title>
-    <link href="https://fonts.googleapis.com/css2?family=${template.fontFamily.replace(" ", "+")}:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>${cvData.name} - CV</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
@@ -91,228 +49,27 @@ function generatePrintableHTML(cv: any, template: any): string {
         }
         
         body {
-            font-family: '${template.fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', sans-serif;
             line-height: 1.6;
-            color: ${template.textColor};
-            background: white;
-            font-size: 12px;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-        
-        .cv-container {
-            width: 100%;
-            max-width: 210mm;
-            min-height: 297mm;
-            margin: 0 auto;
-            background: white;
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-        
-        .sidebar {
-            background: ${template.gradient};
-            color: white;
-            padding: 30px 25px;
-        }
-        
-        .main-content {
-            padding: 30px 25px;
+            color: #333;
             background: white;
         }
         
-        .profile-section {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        
-        .profile-image {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid rgba(255,255,255,0.9);
-            margin-bottom: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        
-        .profile-fallback {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0 auto 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        
-        .profile-name {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 6px;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        }
-        
-        .profile-role {
-            font-size: 14px;
-            opacity: 0.9;
-            margin-bottom: 15px;
-        }
-        
-        .contact-info {
-            margin-bottom: 25px;
-        }
-        
-        .contact-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            font-size: 11px;
-            padding: 6px;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.1);
-            word-break: break-all;
-        }
-        
-        .contact-icon {
-            width: 16px;
-            height: 16px;
-            margin-right: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255,255,255,0.2);
-            border-radius: 3px;
-            font-size: 8px;
-            flex-shrink: 0;
-        }
-        
-        .section {
-            margin-bottom: 25px;
-        }
-        
-        .section-title {
-            font-size: 14px;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: ${template.primaryColor};
-            border-bottom: 2px solid ${template.accentColor};
-            padding-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .sidebar .section-title {
-            color: white;
-            border-bottom-color: rgba(255,255,255,0.3);
-        }
-        
-        .skills-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 6px;
-            margin-bottom: 15px;
-        }
-        
-        .skill-item {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 9px;
-            font-weight: 500;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-        
-        .experience-item, .education-item {
-            margin-bottom: 18px;
-            padding: 12px;
-            border-left: 4px solid ${template.accentColor};
-            background: ${template.backgroundColor};
-            border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        .item-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: ${template.primaryColor};
-            margin-bottom: 4px;
-            line-height: 1.3;
-        }
-        
-        .item-company, .item-school {
-            font-size: 11px;
-            font-weight: 500;
-            color: ${template.secondaryColor};
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .item-duration {
-            font-size: 9px;
-            color: ${template.secondaryColor};
-            font-weight: 500;
-            margin-bottom: 8px;
-            display: inline-block;
-            background: white;
-            padding: 2px 6px;
-            border-radius: 8px;
-            border: 1px solid ${template.accentColor};
-        }
-        
-        .item-description {
-            font-size: 10px;
-            line-height: 1.4;
-            color: ${template.textColor};
-            text-align: justify;
-        }
-        
-        .summary {
-            font-size: 11px;
-            line-height: 1.5;
-            text-align: justify;
-            margin-bottom: 20px;
-            background: ${template.backgroundColor};
-            padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid ${template.accentColor};
-        }
-        
-        .languages-list, .certifications-list {
-            list-style: none;
-        }
-        
-        .languages-list li, .certifications-list li {
-            margin-bottom: 8px;
-            font-size: 10px;
-            position: relative;
-            padding: 6px 8px 6px 20px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 4px;
-        }
-        
-        .languages-list li:before {
-            content: "🌐";
-            position: absolute;
-            left: 6px;
-            font-size: 8px;
-        }
-        
-        .certifications-list li:before {
-            content: "🏆";
-            position: absolute;
-            left: 6px;
-            font-size: 8px;
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .cv-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
         }
         
         @page {
@@ -320,235 +77,304 @@ function generatePrintableHTML(cv: any, template: any): string {
             margin: 0.5in;
         }
         
-        @media print {
-            body {
-                font-size: 11px;
-            }
-            
-            .cv-container {
-                width: 100%;
-                height: 100vh;
-                box-shadow: none;
-            }
-        }
-        
         .print-instructions {
             background: #f0f9ff;
             border: 1px solid #0ea5e9;
             border-radius: 8px;
-            padding: 20px;
-            margin: 20px auto;
-            max-width: 600px;
+            padding: 16px;
+            margin: 20px;
             text-align: center;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #0c4a6e;
         }
         
-        .print-button {
-            background: #0ea5e9;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 16px;
+        .cv-container {
+            max-width: 210mm;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #2563eb;
+        }
+        
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 30px;
+            border: 4px solid #2563eb;
+        }
+        
+        .profile-info h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+        
+        .profile-info .role {
+            font-size: 1.3em;
+            color: #2563eb;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .contact-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            font-size: 0.9em;
+            color: #64748b;
+        }
+        
+        .contact-info span {
+            display: flex;
+            align-items: center;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section h2 {
+            font-size: 1.4em;
             font-weight: 600;
-            cursor: pointer;
-            margin: 10px;
+            color: #1e293b;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e2e8f0;
         }
         
-        .print-button:hover {
-            background: #0284c7;
+        .summary {
+            font-size: 1em;
+            line-height: 1.7;
+            color: #475569;
+            text-align: justify;
         }
         
-        @media print {
-            .print-instructions {
-                display: none;
-            }
+        .experience-item, .education-item {
+            margin-bottom: 20px;
+            padding-left: 20px;
+            border-left: 3px solid #2563eb;
+            position: relative;
+        }
+        
+        .experience-item::before, .education-item::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 5px;
+            width: 10px;
+            height: 10px;
+            background: #2563eb;
+            border-radius: 50%;
+        }
+        
+        .experience-item h3, .education-item h3 {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+        
+        .experience-item .company, .education-item .school {
+            font-weight: 500;
+            color: #2563eb;
+            margin-bottom: 3px;
+        }
+        
+        .experience-item .duration, .education-item .duration {
+            font-size: 0.9em;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        
+        .experience-item .description, .education-item .description {
+            color: #475569;
+            line-height: 1.6;
+        }
+        
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .skill-category h4 {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .skill-tag {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .languages, .certifications {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .languages span, .certifications span {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 40px;
+        }
+        
+        .main-content {
+            /* Main content styles */
+        }
+        
+        .sidebar {
+            /* Sidebar styles */
         }
     </style>
-    <script>
-        function printToPDF() {
-            window.print();
-        }
-        
-        // Auto-trigger print dialog after page loads
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                printToPDF();
-            }, 1000);
-        });
-    </script>
 </head>
 <body>
-    <div class="print-instructions">
-        <h2 style="color: #0ea5e9; margin-bottom: 10px;">📄 CV Ready for Download</h2>
-        <p style="margin-bottom: 15px;">This CV is formatted for printing to PDF. Click the button below or use Ctrl+P (Cmd+P on Mac) to save as PDF.</p>
-        <button class="print-button" onclick="printToPDF()">🖨️ Print to PDF</button>
-        <p style="font-size: 14px; color: #666; margin-top: 10px;">
-            <strong>Tip:</strong> In the print dialog, select "Save as PDF" as your destination for best results.
-        </p>
+    <div class="print-instructions no-print">
+        <h3>📄 CV Ready for Download</h3>
+        <p>This page will automatically open the print dialog. Select "Save as PDF" to download your CV.</p>
+        <p><strong>Tip:</strong> Make sure to select "More settings" and choose "A4" paper size for best results.</p>
     </div>
 
     <div class="cv-container">
-        <div class="sidebar">
-            <div class="profile-section">
-                ${
-                  profileImageUrl
-                    ? `<img src="${profileImageUrl}" alt="${name}" class="profile-image">`
-                    : `
-                <div class="profile-fallback">
-                    ${name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .substring(0, 2)}
-                </div>`
-                }
-                <h1 class="profile-name">${name}</h1>
-                <p class="profile-role">${role}</p>
-            </div>
-            
-            <div class="contact-info">
-                <div class="contact-item">
-                    <span class="contact-icon">📧</span>
-                    <span>${email}</span>
-                </div>
-                <div class="contact-item">
-                    <span class="contact-icon">📱</span>
-                    <span>${phone}</span>
-                </div>
-                <div class="contact-item">
-                    <span class="contact-icon">📍</span>
-                    <span>${location}</span>
-                </div>
-                ${
-                  linkedin
-                    ? `
-                <div class="contact-item">
-                    <span class="contact-icon">💼</span>
-                    <span>${linkedin}</span>
-                </div>
-                `
-                    : ""
-                }
-                ${
-                  github
-                    ? `
-                <div class="contact-item">
-                    <span class="contact-icon">💻</span>
-                    <span>${github}</span>
-                </div>
-                `
-                    : ""
-                }
-                ${
-                  portfolio
-                    ? `
-                <div class="contact-item">
-                    <span class="contact-icon">🌐</span>
-                    <span>${portfolio}</span>
-                </div>
-                `
-                    : ""
-                }
-            </div>
-            
-            ${
-              skills.length > 0
-                ? `
-            <div class="section">
-                <h2 class="section-title">Skills</h2>
-                <div class="skills-grid">
-                    ${skills.map((skill) => `<div class="skill-item">${skill}</div>`).join("")}
+        <div class="header">
+            <img src="${cvData.profileImageUrl || "/placeholder-user.jpg"}" alt="${cvData.name}" class="profile-image" onerror="this.style.display='none'">
+            <div class="profile-info">
+                <h1>${cvData.name}</h1>
+                <div class="role">${cvData.role}</div>
+                <div class="contact-info">
+                    <span>📧 ${cvData.email}</span>
+                    <span>📱 ${cvData.phone}</span>
+                    <span>📍 ${cvData.location}</span>
                 </div>
             </div>
-            `
-                : ""
-            }
-            
-            ${
-              languages.length > 0
-                ? `
-            <div class="section">
-                <h2 class="section-title">Languages</h2>
-                <ul class="languages-list">
-                    ${languages.map((lang) => `<li>${lang}</li>`).join("")}
-                </ul>
-            </div>
-            `
-                : ""
-            }
-            
-            ${
-              certifications.length > 0
-                ? `
-            <div class="section">
-                <h2 class="section-title">Certifications</h2>
-                <ul class="certifications-list">
-                    ${certifications.map((cert) => `<li>${cert}</li>`).join("")}
-                </ul>
-            </div>
-            `
-                : ""
-            }
         </div>
-        
-        <div class="main-content">
-            ${
-              summary
-                ? `
-            <div class="section">
-                <h2 class="section-title">Professional Summary</h2>
-                <div class="summary">${summary}</div>
-            </div>
-            `
-                : ""
-            }
-            
-            ${
-              experience.length > 0
-                ? `
-            <div class="section">
-                <h2 class="section-title">Professional Experience</h2>
-                ${experience
-                  .map(
-                    (exp) => `
-                    <div class="experience-item">
-                        <h3 class="item-title">${exp.position}</h3>
-                        <p class="item-company">🏢 ${exp.company} • ${exp.location || location}</p>
-                        <span class="item-duration">${exp.duration}</span>
-                        <p class="item-description">${exp.description}</p>
+
+        <div class="two-column">
+            <div class="main-content">
+                <div class="section">
+                    <h2>Professional Summary</h2>
+                    <div class="summary">
+                        ${cvData.summary || `Experienced ${cvData.role} with ${cvData.experienceYears} years of expertise in modern technologies and best practices.`}
                     </div>
-                `,
-                  )
-                  .join("")}
+                </div>
+
+                <div class="section">
+                    <h2>Professional Experience</h2>
+                    ${
+                      cvData.experience
+                        ?.map(
+                          (exp) => `
+                        <div class="experience-item">
+                            <h3>${exp.position}</h3>
+                            <div class="company">${exp.company}</div>
+                            <div class="duration">${exp.startDate} - ${exp.endDate}</div>
+                            <div class="description">${exp.description}</div>
+                        </div>
+                    `,
+                        )
+                        .join("") || "<p>No experience data available</p>"
+                    }
+                </div>
+
+                <div class="section">
+                    <h2>Education</h2>
+                    ${
+                      cvData.education
+                        ?.map(
+                          (edu) => `
+                        <div class="education-item">
+                            <h3>${edu.degree}</h3>
+                            <div class="school">${edu.school}</div>
+                            <div class="duration">${edu.startDate} - ${edu.endDate}</div>
+                            ${edu.description ? `<div class="description">${edu.description}</div>` : ""}
+                        </div>
+                    `,
+                        )
+                        .join("") || "<p>No education data available</p>"
+                    }
+                </div>
             </div>
-            `
-                : ""
-            }
-            
-            ${
-              education.length > 0
-                ? `
-            <div class="section">
-                <h2 class="section-title">Education</h2>
-                ${education
-                  .map(
-                    (edu) => `
-                    <div class="education-item">
-                        <h3 class="item-title">${edu.degree}</h3>
-                        <p class="item-school">🎓 ${edu.school}</p>
-                        <span class="item-duration">${edu.year}</span>
-                        ${edu.description ? `<p class="item-description">${edu.description}</p>` : ""}
+
+            <div class="sidebar">
+                <div class="section">
+                    <h2>Skills</h2>
+                    <div class="skills-list">
+                        ${cvData.skills?.map((skill) => `<span class="skill-tag">${skill}</span>`).join("") || "<p>No skills listed</p>"}
                     </div>
-                `,
-                  )
-                  .join("")}
+                </div>
+
+                ${
+                  cvData.languages?.length
+                    ? `
+                <div class="section">
+                    <h2>Languages</h2>
+                    <div class="languages">
+                        ${cvData.languages.map((lang) => `<span>${lang}</span>`).join("")}
+                    </div>
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  cvData.certifications?.length
+                    ? `
+                <div class="section">
+                    <h2>Certifications</h2>
+                    <div class="certifications">
+                        ${cvData.certifications.map((cert) => `<span>${cert}</span>`).join("")}
+                    </div>
+                </div>
+                `
+                    : ""
+                }
             </div>
-            `
-                : ""
-            }
         </div>
     </div>
+
+    <script>
+        // Auto-trigger print dialog after page loads
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                window.print();
+            }, 1000);
+        });
+        
+        // Handle print dialog close
+        window.addEventListener('afterprint', function() {
+            // Optional: You could close the window or redirect
+            console.log('Print dialog closed');
+        });
+    </script>
 </body>
 </html>
   `

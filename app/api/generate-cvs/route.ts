@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { addCVToLibrary } from "@/lib/cv-data"
+import { generateCVData, addToLibrary } from "@/lib/cv-data"
 
 // Barcelona-based data for realistic CVs
 const BARCELONA_NAMES = {
@@ -302,91 +302,26 @@ export async function POST(request: NextRequest) {
   try {
     const { count = 5 } = await request.json()
 
-    if (count < 1 || count > 50) {
-      return NextResponse.json({ error: "Count must be between 1 and 50" }, { status: 400 })
+    if (count < 1 || count > 20) {
+      return NextResponse.json({ error: "Count must be between 1 and 20" }, { status: 400 })
     }
 
-    const encoder = new TextEncoder()
+    const generatedCVs = []
 
-    const stream = new ReadableStream({
-      start(controller) {
-        const generateCVs = async () => {
-          try {
-            for (let i = 0; i < count; i++) {
-              console.log(`Generating CV ${i + 1}/${count}`)
+    for (let i = 0; i < count; i++) {
+      const cvData = generateCVData()
+      addToLibrary(cvData)
+      generatedCVs.push(cvData)
+    }
 
-              // Generate CV data
-              const cvData = generateRandomCV(i)
-
-              // Add to library
-              addCVToLibrary(cvData)
-
-              // Send progress update
-              const progressData = {
-                type: "progress",
-                current: i + 1,
-                total: count,
-                cv: {
-                  id: cvData.id,
-                  name: cvData.name,
-                  role: cvData.role,
-                  email: cvData.email,
-                  location: cvData.location,
-                  profileImageUrl: cvData.profileImageUrl,
-                  gender: cvData.gender,
-                  age: cvData.age,
-                  experienceYears: cvData.experienceYears,
-                  summary: cvData.summary,
-                  skills: cvData.skills,
-                  companies: cvData.companies,
-                  university: cvData.university,
-                },
-              }
-
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressData)}\n\n`))
-
-              // Small delay to make progress visible
-              await new Promise((resolve) => setTimeout(resolve, 100))
-            }
-
-            // Send completion
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({
-                  type: "complete",
-                  message: `Successfully generated ${count} CVs`,
-                })}\n\n`,
-              ),
-            )
-
-            controller.close()
-          } catch (error) {
-            console.error("Error in CV generation:", error)
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({
-                  type: "error",
-                  message: error.message || "Failed to generate CVs",
-                })}\n\n`,
-              ),
-            )
-            controller.close()
-          }
-        }
-
-        generateCVs()
-      },
-    })
-
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
+    return NextResponse.json({
+      success: true,
+      message: `Generated ${count} CVs successfully`,
+      cvs: generatedCVs,
+      count: generatedCVs.length,
     })
   } catch (error) {
-    console.error("Error in generate-cvs route:", error)
+    console.error("Error generating CVs:", error)
     return NextResponse.json({ error: "Failed to generate CVs" }, { status: 500 })
   }
 }
