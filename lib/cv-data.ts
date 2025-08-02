@@ -420,8 +420,8 @@ export function generateCVData(id: string) {
   return cvData
 }
 
-// Add CV to library
-export function addCVToLibrary(cv: any): void {
+// Add CV to library - REQUIRED EXPORT
+export function addToLibrary(cv: any): void {
   // Remove existing CV with same ID if it exists
   cvLibrary = cvLibrary.filter((existingCV) => existingCV.id !== cv.id)
 
@@ -434,9 +434,34 @@ export function addCVToLibrary(cv: any): void {
   console.log(`CV added to library: ${cv.name} (Total: ${cvLibrary.length})`)
 }
 
-// Get all CVs from library
+// Alternative function name for compatibility
+export function addCVToLibrary(cv: any): void {
+  addToLibrary(cv)
+}
+
+// Get all CVs from library - REQUIRED EXPORT
+export function getLibraryCVs(): any[] {
+  return [...cvLibrary].sort(
+    (a, b) => new Date(b.uploadDate || b.createdAt).getTime() - new Date(a.uploadDate || a.createdAt).getTime(),
+  )
+}
+
+// Alternative function name for compatibility
 export function getCVLibrary(): any[] {
-  return [...cvLibrary].sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime())
+  return getLibraryCVs()
+}
+
+// Get library status - REQUIRED EXPORT
+export function getLibraryStatus() {
+  const generated = cvLibrary.filter((cv) => cv.type === "generated").length
+  const uploaded = cvLibrary.filter((cv) => cv.type === "uploaded").length
+
+  return {
+    total: cvLibrary.length,
+    generated,
+    uploaded,
+    lastUpdated: new Date().toISOString(),
+  }
 }
 
 // Get CV by ID
@@ -478,6 +503,7 @@ const designTemplates = [
     textColor: "#1e293b",
     gradient: "linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)",
     layout: "sidebar-left",
+    style: "professional",
   },
   {
     id: "creative",
@@ -490,6 +516,7 @@ const designTemplates = [
     textColor: "#374151",
     gradient: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
     layout: "sidebar-right",
+    style: "creative",
   },
   {
     id: "executive",
@@ -502,6 +529,7 @@ const designTemplates = [
     textColor: "#111827",
     gradient: "linear-gradient(135deg, #1f2937 0%, #374151 100%)",
     layout: "header-top",
+    style: "executive",
   },
   {
     id: "tech",
@@ -514,6 +542,7 @@ const designTemplates = [
     textColor: "#065f46",
     gradient: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
     layout: "sidebar-left",
+    style: "technical",
   },
   {
     id: "minimal",
@@ -526,17 +555,25 @@ const designTemplates = [
     textColor: "#1f2937",
     gradient: "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)",
     layout: "sidebar-right",
+    style: "minimal",
   },
 ]
 
+// Get design template - REQUIRED EXPORT
 export function getDesignTemplate(seed: number = Date.now()): any {
   const index = seed % designTemplates.length
   return designTemplates[index]
 }
 
+// Get PDF design template - REQUIRED EXPORT
+export function getPDFDesignTemplate(seed: number = Date.now()): any {
+  return getDesignTemplate(seed)
+}
+
+// Search CVs function
 export function searchCVs(query: string): any[] {
   if (!query.trim()) {
-    return getCVLibrary()
+    return getLibraryCVs()
   }
 
   const searchTerm = query.toLowerCase()
@@ -548,4 +585,20 @@ export function searchCVs(query: string): any[] {
       cv.skills?.some((skill: string) => skill.toLowerCase().includes(searchTerm)) ||
       cv.companies?.some((company: string) => company.toLowerCase().includes(searchTerm)),
   )
+}
+
+// Clear library function for testing
+export function clearLibrary(): void {
+  cvLibrary = []
+  console.log("CV library cleared")
+}
+
+// Remove CV from library (alternative name)
+export function removeCVFromLibrary(id: string): boolean {
+  return deleteCVFromLibrary(id)
+}
+
+// Search library function (alternative name)
+export function searchLibrary(query: string): any[] {
+  return searchCVs(query)
 }
