@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { generateCVData, addToLibrary } from "@/lib/cv-data"
 
 // In-memory storage for generated CVs
 const cvStorage = new Map<string, any>()
@@ -129,67 +130,6 @@ const universities = [
   "IE University",
 ]
 
-function generateRandomCV(id: string) {
-  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)]
-  const lastName = lastNames[Math.floor(Math.random() * lastNames.length)]
-  const name = `${firstName} ${lastName}`
-  const role = techRoles[Math.floor(Math.random() * techRoles.length)]
-  const age = 25 + Math.floor(Math.random() * 15) // 25-40 years old
-  const experienceYears = Math.max(2, age - 23) // At least 2 years experience
-  const gender = Math.random() > 0.5 ? "male" : "female"
-
-  // Generate email
-  const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@email.com`
-
-  // Generate profile image URL
-  const profileImageUrl = `https://randomuser.me/api/portraits/${gender === "male" ? "men" : "women"}/${Math.floor(Math.random() * 99)}.jpg`
-
-  // Select random skills (6-10 skills)
-  const skillCount = 6 + Math.floor(Math.random() * 5)
-  const selectedSkills = []
-  const skillsCopy = [...techSkills]
-  for (let i = 0; i < skillCount && skillsCopy.length > 0; i++) {
-    const randomIndex = Math.floor(Math.random() * skillsCopy.length)
-    selectedSkills.push(skillsCopy.splice(randomIndex, 1)[0])
-  }
-
-  // Select random companies (2-4 companies)
-  const companyCount = 2 + Math.floor(Math.random() * 3)
-  const selectedCompanies = []
-  const companiesCopy = [...barcelonaCompanies]
-  for (let i = 0; i < companyCount && companiesCopy.length > 0; i++) {
-    const randomIndex = Math.floor(Math.random() * companiesCopy.length)
-    selectedCompanies.push(companiesCopy.splice(randomIndex, 1)[0])
-  }
-
-  const university = universities[Math.floor(Math.random() * universities.length)]
-
-  // Generate professional summary
-  const summaries = [
-    `Experienced ${role.toLowerCase()} with ${experienceYears} years of expertise in modern web technologies. Passionate about creating scalable solutions and leading development teams in Barcelona's tech ecosystem.`,
-    `Results-driven ${role.toLowerCase()} specializing in ${selectedSkills.slice(0, 3).join(", ")}. Proven track record of delivering high-quality software solutions in agile environments.`,
-    `Senior ${role.toLowerCase()} with extensive experience in full-stack development. Strong problem-solving skills and commitment to writing clean, maintainable code.`,
-  ]
-
-  const summary = summaries[Math.floor(Math.random() * summaries.length)]
-
-  return {
-    id,
-    name,
-    role,
-    email,
-    location: "Barcelona, Spain",
-    profileImageUrl,
-    gender,
-    age,
-    experienceYears,
-    summary,
-    skills: selectedSkills,
-    companies: selectedCompanies,
-    university,
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -212,32 +152,46 @@ export async function POST(request: NextRequest) {
               // Generate unique ID
               const cvId = `cv-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`
 
-              // Generate CV data
-              const cvData = generateRandomCV(cvId)
+              // Generate comprehensive CV data using the sophisticated system
+              const cvData = generateCVData(cvId)
 
-              // Store in memory
-              cvStorage.set(cvId, cvData)
+              // Add to library storage
+              addToLibrary(cvData)
 
               console.log(`Generated CV ${i + 1}/${count}: ${cvData.name}`)
 
-              // Send progress update
+              // Send progress update with the generated CV data
               const progressData = {
                 type: "progress",
                 current: i + 1,
                 total: count,
-                cv: cvData,
+                cv: {
+                  id: cvData.id,
+                  name: cvData.name,
+                  role: cvData.role,
+                  email: cvData.email,
+                  location: cvData.location,
+                  profileImageUrl: cvData.profileImageUrl,
+                  gender: cvData.gender,
+                  age: cvData.age,
+                  experienceYears: cvData.experienceYears,
+                  summary: cvData.summary,
+                  skills: cvData.skills,
+                  companies: cvData.companies,
+                  university: cvData.university,
+                },
               }
 
               controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressData)}\n\n`))
 
-              // Small delay to show progress
-              await new Promise((resolve) => setTimeout(resolve, 100))
+              // Small delay to show progress and prevent overwhelming the client
+              await new Promise((resolve) => setTimeout(resolve, 200))
             }
 
             // Send completion message
             const completeData = {
               type: "complete",
-              message: `Successfully generated ${count} CVs`,
+              message: `Successfully generated ${count} professional CVs`,
             }
 
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(completeData)}\n\n`))
@@ -249,7 +203,7 @@ export async function POST(request: NextRequest) {
 
             const errorData = {
               type: "error",
-              message: error instanceof Error ? error.message : "Unknown error occurred",
+              message: error instanceof Error ? error.message : "Unknown error occurred during CV generation",
             }
 
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`))
@@ -266,6 +220,9 @@ export async function POST(request: NextRequest) {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST",
+        "Access-Control-Allow-Headers": "Content-Type",
       },
     })
   } catch (error) {

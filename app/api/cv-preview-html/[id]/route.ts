@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getCVProfile, generateCVData } from "@/lib/cv-data"
+import { getCVProfile } from "@/lib/cv-data"
 import { generateCVHTML } from "@/lib/cv-layouts"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
@@ -12,37 +12,29 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     console.log(`Fetching CV preview for ID: ${id}`)
 
-    // Try to get CV from storage first
-    let cv = getCVProfile(id)
+    // Get CV data from storage
+    const cvData = getCVProfile(id)
 
-    // If not found, generate it
-    if (!cv) {
-      console.log(`CV not found in storage, generating new CV for ID: ${id}`)
-      cv = generateCVData(id)
-    }
-
-    if (!cv) {
-      console.log(`Failed to generate CV for ID: ${id}`)
+    if (!cvData) {
+      console.log(`CV not found: ${id}`)
       return NextResponse.json({ error: "CV not found" }, { status: 404 })
     }
 
-    console.log(`Generating HTML preview for CV: ${cv.name}`)
+    // Generate HTML preview
+    const htmlContent = generateCVHTML(cvData)
 
-    // Generate HTML
-    const htmlContent = generateCVHTML(cv)
-
-    return new NextResponse(htmlContent, {
+    return new Response(htmlContent, {
       headers: {
         "Content-Type": "text/html",
         "Cache-Control": "no-cache",
       },
     })
   } catch (error) {
-    console.error("Error in cv-preview-html route:", error)
+    console.error("Error generating CV preview:", error)
     return NextResponse.json(
       {
         error: "Failed to generate CV preview",
-        message: error.message,
+        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     )
