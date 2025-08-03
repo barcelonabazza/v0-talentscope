@@ -1,0 +1,103 @@
+graph TD
+    %% User Interface Layer
+    A["User Interface"] --> B["CV Generator Tab"]
+    A --> C["CV Uploader Tab"]
+    A --> D["CV Library Tab"]
+    A --> E["Chat Interface Tab"]
+    
+    %% CV Generator Workflow
+    B --> F["Generate CVs Form"]
+    F --> G["POST /api/generate-cvs"]
+    G --> H["Process Generation Request"]
+    H --> I["Create Multiple CV Profiles"]
+    I --> J["Generate PDF Files"]
+    J --> K["Store in Memory Map"]
+    K --> L["Return CV List with IDs"]
+    
+    %% CV Upload Workflow
+    C --> M["File Upload Component"]
+    M --> N["POST /api/upload-cv"]
+    N --> O["Validate File Size #40;100MB#41;"]
+    O --> P["Parse PDF Content"]
+    P --> Q["Extract Text Data"]
+    Q --> R["Store Original PDF"]
+    R --> S["Add to CV Library"]
+    
+    %% CV Library Workflow
+    D --> T["GET /api/cv-library"]
+    T --> U["Retrieve All CVs"]
+    U --> V["Format CV Data"]
+    V --> W["Return Paginated Results"]
+    W --> X["Display CV Cards"]
+    X --> Y["Download Actions"]
+    Y --> Z["GET /api/download-cv/[id]"]
+    
+    %% Chat Interface Workflow
+    E --> AA["Chat Input"]
+    AA --> AB["POST /api/chat"]
+    AB --> AC["Process Chat Message"]
+    AC --> AD["CV Screening Logic"]
+    AD --> AE["Generate Response"]
+    AE --> AF["Stream Response"]
+    AF --> AG["Update Chat UI"]
+    
+    %% PDF Generation & Preview
+    I --> AH["CV Data Processing"]
+    AH --> AI["Apply CV Layouts"]
+    AI --> AJ["Generate HTML"]
+    AJ --> AK["Convert to PDF"]
+    AK --> AL["GET /api/cv-preview-pdf/[id]"]
+    AK --> AM["GET /api/cv-preview-html/[id]"]
+    
+    %% File Storage System
+    K --> AN["In-Memory CV Map"]
+    R --> AO["File System Storage"]
+    AN --> AP["Temporary Storage"]
+    AO --> AQ["Persistent Storage"]
+    
+    %% Download Workflows
+    Z --> AR["Retrieve CV from Storage"]
+    AR --> AS["Set Download Headers"]
+    AS --> AT["Stream PDF File"]
+    
+    %% Error Handling
+    O --> AU["File Too Large Error"]
+    P --> AV["PDF Parse Error"]
+    AC --> AW["Chat Processing Error"]
+    
+    %% External Dependencies
+    I --> AX["RandomUser.me API"]
+    AX --> AY["Profile Images"]
+    AY --> I
+    
+    %% Real-time Features
+    AB --> AZ["Server-Sent Events"]
+    AZ --> BA["Progress Updates"]
+    BA --> AG
+    
+    %% API Status Monitoring
+    BB["GET /api/status"] --> BC["System Health Check"]
+    BC --> BD["Return Status Info"]
+    
+    %% Debug Endpoints
+    BE["GET /api/debug-library"] --> BF["Debug CV Library"]
+    BF --> BG["Return Debug Info"]
+    
+    %% Test Endpoints
+    BH["GET /api/test-add-cv"] --> BI["Add Test CV"]
+    BI --> BJ["Populate Library"]
+    
+    %% Styling and Themes
+    classDef userInterface fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef apiEndpoint fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef dataProcessing fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef storage fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef external fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef error fill:#ffebee,stroke:#c62828,stroke-width:2px
+    
+    class A,B,C,D,E,F,M,AA,X userInterface
+    class G,N,T,AB,AL,AM,Z,BB,BE,BH apiEndpoint
+    class H,I,J,P,Q,U,V,AC,AD,AE,AH,AI,AJ,AK,AR dataProcessing
+    class K,AN,AO,AP,AQ storage
+    class AX,AY external
+    class AU,AV,AW error
