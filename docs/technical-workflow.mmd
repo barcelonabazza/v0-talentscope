@@ -17,7 +17,7 @@ graph TD
     %% CV Upload Workflow
     C --> M["File Upload Component"]
     M --> N["POST /api/upload-cv"]
-    N --> O["Validate File Size #40;100MB#41;"]
+    N --> O["Validate File Size (100MB)"]
     O --> P["Parse PDF Content"]
     P --> Q["Extract Text Data"]
     Q --> R["Store Original PDF"]
