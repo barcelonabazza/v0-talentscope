@@ -1,513 +1,458 @@
-// Enhanced CV data generation with 25+ professional templates and guaranteed profile photos
-
-interface CVData {
+export interface CVProfile {
   id: string
   name: string
+  role: string
   email: string
   phone: string
   location: string
-  role: string
+  profileImageUrl: string
   summary: string
   experience: Array<{
-    company: string
     position: string
-    startDate: string
-    endDate: string
-    description: string
+    company: string
+    duration: string
+    location: string
+    description: string[]
   }>
   education: Array<{
-    school: string
     degree: string
-    startDate: string
-    endDate: string
-    description: string
+    field: string
+    institution: string
+    duration: string
+    location: string
   }>
   skills: string[]
   languages: string[]
-  certifications: string[]
   linkedin: string
   github: string
   portfolio: string
-  profileImageUrl: string
-  age: number
-  experienceYears: string
-  gender: string
-  graduationYear: number
-  createdAt: string
-  type: string
+  gender?: string
+  age?: number
+  experienceYears?: number
   companies?: string[]
-  addedAt?: string
-  updatedAt?: string
+  university?: string
 }
 
-interface DesignTemplate {
-  id: string
-  name: string
-  layout:
-    | "sidebar-left"
-    | "sidebar-right"
-    | "header-top"
-    | "creative-grid"
-    | "technical"
-    | "clean-sidebar"
-    | "elegant"
-    | "vibrant"
-    | "luxury"
-    | "modern-card"
-    | "minimalist"
-    | "creative"
-    | "executive"
-    | "traditional"
-    | "asymmetric"
-    | "grid-layout"
-    | "magazine"
-    | "nature"
-    | "modern-indigo"
-    | "executive-crimson"
-    | "fresh-cyan"
-  colors: {
-    primary: string
-    secondary: string
-    accent: string
-  }
-  fonts: {
-    heading: string
-    body: string
-  }
-  style: string
-}
+// In-memory storage for CVs
+const cvStorage = new Map<string, CVProfile>()
 
-// Barcelona-specific data
-const barcelonaNames = {
-  male: [
-    "Marc",
-    "David",
-    "Daniel",
-    "Alejandro",
-    "Pablo",
-    "Adrian",
-    "Alvaro",
-    "Hugo",
-    "Mario",
-    "Diego",
-    "Carlos",
-    "Sergio",
-    "Raul",
-    "Ivan",
-    "Miguel",
-    "Antonio",
-    "Francisco",
-    "Jose",
-    "Manuel",
-    "Rafael",
-  ],
-  female: [
-    "Maria",
-    "Carmen",
-    "Ana",
-    "Isabel",
-    "Pilar",
-    "Dolores",
-    "Teresa",
-    "Rosa",
-    "Francisca",
-    "Antonia",
-    "Laura",
-    "Marta",
-    "Elena",
-    "Sara",
-    "Paula",
-    "Cristina",
-    "Andrea",
-    "Lucia",
-    "Sofia",
-    "Alba",
-  ],
-}
-
-const barcelonaSurnames = [
-  "Garcia",
-  "Rodriguez",
-  "Gonzalez",
-  "Fernandez",
-  "Lopez",
-  "Martinez",
-  "Sanchez",
-  "Perez",
-  "Gomez",
-  "Martin",
-  "Jimenez",
-  "Ruiz",
-  "Hernandez",
-  "Diaz",
-  "Moreno",
-  "Alvarez",
-  "Muñoz",
-  "Romero",
-  "Alonso",
-  "Gutierrez",
-  "Navarro",
-  "Torres",
-  "Dominguez",
-  "Vazquez",
-  "Ramos",
-  "Gil",
-  "Ramirez",
-  "Serrano",
-  "Blanco",
-  "Suarez",
-]
-
+// Barcelona tech companies
 const barcelonaCompanies = [
-  "Banco Santander",
-  "BBVA",
-  "Telefonica",
-  "Repsol",
-  "Iberdrola",
-  "Inditex",
-  "Amadeus IT",
-  "Mercadona",
-  "El Corte Ingles",
-  "Mapfre",
-  "Acciona",
-  "Ferrovial",
-  "ACS Group",
-  "Indra",
-  "Cellnex",
-  "Red Electrica",
-  "Enagas",
-  "Aena",
-  "Siemens Gamesa",
-  "Naturgy",
+  "Glovo",
+  "Typeform",
+  "Wallapop",
+  "Letgo",
+  "Travelperk",
+  "Factorial",
+  "Holded",
+  "Camaloon",
+  "Redbooth",
+  "Kantox",
+  "Carto",
+  "Splice Machine",
+  "Scytl",
+  "Akamon Entertainment",
+  "Social Point",
+  "King Digital Entertainment",
+  "Ubisoft Barcelona",
+  "Gameloft",
+  "Socialpoint",
+  "Miniclip",
+  "Sage",
+  "Zurich Insurance",
+  "Nestlé",
+  "Danone",
+  "Roche",
+  "Novartis",
+  "Amazon",
+  "Microsoft",
+  "Google",
+  "Meta",
+  "Apple",
+  "IBM",
+  "Oracle",
+  "Accenture",
+  "Deloitte",
+  "PwC",
+  "KPMG",
+  "EY",
+  "McKinsey & Company",
 ]
 
+// Barcelona universities
 const barcelonaUniversities = [
-  "Universitat de Barcelona",
-  "Universitat Politècnica de Catalunya",
-  "Universitat Autònoma de Barcelona",
-  "Universitat Pompeu Fabra",
+  "Universitat de Barcelona (UB)",
+  "Universitat Autònoma de Barcelona (UAB)",
+  "Universitat Politècnica de Catalunya (UPC)",
+  "Universitat Pompeu Fabra (UPF)",
   "ESADE Business School",
-  "IE Business School",
+  "IE University",
   "IESE Business School",
-  "Universidad Carlos III de Madrid",
-  "Universidad Complutense de Madrid",
-  "Universidad Politécnica de Madrid",
+  "Universitat Ramon Llull (URL)",
+  "Universitat Oberta de Catalunya (UOC)",
+  "EAE Business School",
 ]
 
-const techSkills = [
-  "JavaScript",
-  "TypeScript",
-  "React",
-  "Node.js",
-  "Python",
-  "Java",
-  "C#",
-  "PHP",
-  "Ruby",
-  "Go",
-  "AWS",
-  "Azure",
-  "Docker",
-  "Kubernetes",
-  "MongoDB",
-  "PostgreSQL",
-  "MySQL",
-  "Redis",
-  "Git",
-  "Jenkins",
-]
-
-const businessSkills = [
-  "Project Management",
-  "Agile",
-  "Scrum",
-  "Leadership",
-  "Strategic Planning",
-  "Business Analysis",
-  "Data Analysis",
-  "Marketing",
-  "Sales",
-  "Customer Service",
-  "Communication",
-  "Negotiation",
-]
-
-const designSkills = [
-  "Figma",
-  "Sketch",
-  "Adobe Creative Suite",
-  "Photoshop",
-  "Illustrator",
-  "InDesign",
-  "After Effects",
-  "UI/UX Design",
-  "Prototyping",
-  "User Research",
-  "Wireframing",
-  "Design Systems",
-]
-
-const jobTitles = [
-  "Software Engineer",
+// Tech roles
+const techRoles = [
+  "Senior Software Engineer",
+  "Full Stack Developer",
   "Frontend Developer",
   "Backend Developer",
-  "Full Stack Developer",
   "DevOps Engineer",
   "Data Scientist",
   "Product Manager",
-  "UX Designer",
-  "UI Designer",
-  "Marketing Manager",
-  "Sales Manager",
-  "Business Analyst",
-  "Project Manager",
-  "Scrum Master",
-  "Technical Lead",
+  "UX/UI Designer",
+  "Mobile Developer",
+  "Cloud Architect",
+  "Tech Lead",
   "Engineering Manager",
+  "Data Engineer",
+  "Machine Learning Engineer",
+  "Cybersecurity Specialist",
+  "QA Engineer",
+  "Site Reliability Engineer",
 ]
 
-// In-memory storage for CVs
-let cvLibrary: any[] = []
+// Skills by category
+const skillsByCategory = {
+  frontend: [
+    "React",
+    "Vue.js",
+    "Angular",
+    "TypeScript",
+    "JavaScript",
+    "HTML5",
+    "CSS3",
+    "Sass",
+    "Tailwind CSS",
+    "Next.js",
+  ],
+  backend: ["Node.js", "Python", "Java", "C#", "Go", "Ruby", "PHP", "Express.js", "Django", "Spring Boot"],
+  database: ["PostgreSQL", "MongoDB", "MySQL", "Redis", "Elasticsearch", "DynamoDB", "Cassandra"],
+  cloud: ["AWS", "Azure", "Google Cloud", "Docker", "Kubernetes", "Terraform", "Jenkins", "GitLab CI"],
+  mobile: ["React Native", "Flutter", "Swift", "Kotlin", "Xamarin", "Ionic"],
+  data: ["Python", "R", "SQL", "Pandas", "NumPy", "TensorFlow", "PyTorch", "Spark", "Tableau", "Power BI"],
+}
 
-// Generate random CV data
-export function generateCVData() {
-  const gender = Math.random() > 0.5 ? "male" : "female"
-  const firstName = barcelonaNames[gender][Math.floor(Math.random() * barcelonaNames[gender].length)]
-  const lastName = barcelonaSurnames[Math.floor(Math.random() * barcelonaSurnames.length)]
-  const name = `${firstName} ${lastName}`
+// Male and female names for better photo matching
+const maleNames = [
+  "Alejandro García",
+  "Carlos Rodríguez",
+  "David López",
+  "Daniel Martín",
+  "Pablo González",
+  "Adrián Sánchez",
+  "Álvaro Pérez",
+  "Sergio Gómez",
+  "Jorge Jiménez",
+  "Rubén Ruiz",
+  "Iván Hernández",
+  "Miguel Díaz",
+  "Óscar Moreno",
+  "Raúl Muñoz",
+  "Fernando Álvarez",
+  "Marc Fernández",
+  "Jordi Romero",
+  "Xavier Navarro",
+  "Pau Torres",
+  "Oriol Domínguez",
+]
 
-  const role = jobTitles[Math.floor(Math.random() * jobTitles.length)]
-  const experienceYears = Math.floor(Math.random() * 10) + 1
+const femaleNames = [
+  "María García",
+  "Carmen Rodríguez",
+  "Josefa López",
+  "Isabel Martín",
+  "Ana González",
+  "Cristina Sánchez",
+  "Marta Pérez",
+  "Elena Gómez",
+  "Laura Jiménez",
+  "Sara Ruiz",
+  "Andrea Hernández",
+  "Paula Díaz",
+  "Lucía Moreno",
+  "Carla Muñoz",
+  "Natalia Álvarez",
+  "Núria Fernández",
+  "Mireia Romero",
+  "Laia Navarro",
+  "Júlia Torres",
+  "Ariadna Domínguez",
+]
 
-  // Generate skills based on role
-  let skills = []
-  if (role.includes("Developer") || role.includes("Engineer")) {
-    skills = techSkills.slice(0, Math.floor(Math.random() * 8) + 5)
-  } else if (role.includes("Designer")) {
-    skills = designSkills.slice(0, Math.floor(Math.random() * 6) + 4)
-  } else {
-    skills = businessSkills.slice(0, Math.floor(Math.random() * 6) + 4)
-  }
+// Generate seeded random number
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000
+  return x - Math.floor(x)
+}
 
-  // Generate experience
-  const experience = []
-  const currentYear = new Date().getFullYear()
+// Generate seeded random integer between min and max
+function seededRandomInt(seed: number, min: number, max: number): number {
+  return Math.floor(seededRandom(seed) * (max - min + 1)) + min
+}
+
+// Generate seeded random choice from array
+function seededChoice<T>(seed: number, array: T[]): T {
+  const index = seededRandomInt(seed, 0, array.length - 1)
+  return array[index]
+}
+
+// Generate realistic profile image URL
+function generateProfileImageUrl(seed: number, gender: string, age: number): string {
+  // Use randomuser.me API for realistic photos
+  const genderParam = gender === "male" ? "men" : "women"
+  const photoId = seededRandomInt(seed, 1, 99)
+  return `https://randomuser.me/api/portraits/${genderParam}/${photoId}.jpg`
+}
+
+// Generate professional summary
+function generateSummary(role: string, experienceYears: number, skills: string[], seed: number): string {
+  const summaryTemplates = [
+    `Experienced ${role.toLowerCase()} with ${experienceYears}+ years of expertise in developing scalable applications and leading technical initiatives. Proven track record in ${skills.slice(0, 3).join(", ")} with a passion for innovation and continuous learning.`,
+    `Results-driven ${role.toLowerCase()} specializing in ${skills.slice(0, 2).join(" and ")} with ${experienceYears} years of experience in the Barcelona tech ecosystem. Strong background in agile methodologies and cross-functional collaboration.`,
+    `Senior ${role.toLowerCase()} with extensive experience in ${skills.slice(0, 3).join(", ")} and a proven ability to deliver high-quality solutions. ${experienceYears} years of experience working with international teams and cutting-edge technologies.`,
+    `Passionate ${role.toLowerCase()} with ${experienceYears}+ years of experience building robust applications using ${skills.slice(0, 2).join(" and ")}. Committed to writing clean, maintainable code and mentoring junior developers.`,
+  ]
+
+  return seededChoice(seed + 100, summaryTemplates)
+}
+
+// Generate work experience
+function generateExperience(role: string, experienceYears: number, seed: number): CVProfile["experience"] {
+  const experience: CVProfile["experience"] = []
+  let currentYear = 2024
   let remainingYears = experienceYears
 
-  while (remainingYears > 0) {
-    const yearsAtCompany = Math.min(Math.floor(Math.random() * 4) + 1, remainingYears)
-    const company = barcelonaCompanies[Math.floor(Math.random() * barcelonaCompanies.length)]
+  // Generate 2-4 positions
+  const numPositions = Math.min(seededRandomInt(seed + 200, 2, 4), Math.ceil(experienceYears / 2))
+
+  for (let i = 0; i < numPositions; i++) {
+    const yearsAtCompany = Math.min(
+      seededRandomInt(seed + 300 + i, 1, Math.max(1, Math.floor(remainingYears / (numPositions - i)))),
+      remainingYears,
+    )
+
+    const company = seededChoice(seed + 400 + i, barcelonaCompanies)
+    const startYear = currentYear - yearsAtCompany
+    const endYear = i === 0 ? "Present" : currentYear.toString()
+
+    const seniority = i === 0 ? "Senior" : i === 1 ? "Mid-level" : "Junior"
+    const position = role.includes("Senior") ? role : `${seniority} ${role.replace("Senior ", "")}`
+
+    const responsibilities = [
+      `Led development of scalable web applications serving 100K+ users`,
+      `Collaborated with cross-functional teams to deliver features on time`,
+      `Implemented CI/CD pipelines reducing deployment time by 60%`,
+      `Mentored junior developers and conducted code reviews`,
+      `Optimized application performance resulting in 40% faster load times`,
+      `Designed and implemented RESTful APIs and microservices architecture`,
+      `Participated in agile development processes and sprint planning`,
+    ]
 
     experience.push({
+      position,
       company,
-      position: role,
-      startDate: `${currentYear - remainingYears}`,
-      endDate: remainingYears === yearsAtCompany ? "Present" : `${currentYear - remainingYears + yearsAtCompany}`,
-      description: `Led development projects and collaborated with cross-functional teams at ${company}.`,
+      duration: `${startYear} - ${endYear}`,
+      location: "Barcelona, Spain",
+      description: [
+        seededChoice(seed + 500 + i, responsibilities),
+        seededChoice(
+          seed + 600 + i,
+          responsibilities.filter((_, idx) => idx !== (seed + 500 + i) % responsibilities.length),
+        ),
+        seededChoice(
+          seed + 700 + i,
+          responsibilities.filter(
+            (_, idx) =>
+              idx !== (seed + 500 + i) % responsibilities.length && idx !== (seed + 600 + i) % responsibilities.length,
+          ),
+        ),
+      ],
     })
 
+    currentYear = startYear
     remainingYears -= yearsAtCompany
   }
 
-  // Generate education
-  const university = barcelonaUniversities[Math.floor(Math.random() * barcelonaUniversities.length)]
-  const degrees = ["Bachelor", "Master", "PhD"]
-  const degree = degrees[Math.floor(Math.random() * degrees.length)]
+  return experience
+}
 
-  const education = [
-    {
-      school: university,
-      degree: `${degree} in Computer Science`,
-      startDate: "2015",
-      endDate: "2019",
-    },
+// Generate education
+function generateEducation(seed: number): CVProfile["education"] {
+  const degrees = [
+    { degree: "Master's Degree", field: "Computer Science" },
+    { degree: "Bachelor's Degree", field: "Software Engineering" },
+    { degree: "Bachelor's Degree", field: "Computer Science" },
+    { degree: "Master's Degree", field: "Data Science" },
+    { degree: "Bachelor's Degree", field: "Information Technology" },
   ]
 
-  // Generate profile image URL
-  const profileImageUrl = `https://randomuser.me/api/portraits/${gender === "male" ? "men" : "women"}/${Math.floor(Math.random() * 99)}.jpg`
+  const selectedDegree = seededChoice(seed + 800, degrees)
+  const university = seededChoice(seed + 900, barcelonaUniversities)
+  const graduationYear = seededRandomInt(seed + 1000, 2010, 2020)
 
-  return {
-    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+  return [
+    {
+      degree: selectedDegree.degree,
+      field: selectedDegree.field,
+      institution: university,
+      duration: `${graduationYear - 4} - ${graduationYear}`,
+      location: "Barcelona, Spain",
+    },
+  ]
+}
+
+// Generate skills based on role
+function generateSkills(role: string, seed: number): string[] {
+  const skills: string[] = []
+
+  // Add role-specific skills
+  if (role.includes("Frontend") || role.includes("Full Stack")) {
+    skills.push(
+      ...seededChoice(seed + 1100, [skillsByCategory.frontend.slice(0, 4), skillsByCategory.frontend.slice(2, 6)]),
+    )
+  }
+
+  if (role.includes("Backend") || role.includes("Full Stack")) {
+    skills.push(
+      ...seededChoice(seed + 1200, [skillsByCategory.backend.slice(0, 3), skillsByCategory.backend.slice(1, 4)]),
+    )
+  }
+
+  if (role.includes("Data")) {
+    skills.push(...seededChoice(seed + 1300, [skillsByCategory.data.slice(0, 4), skillsByCategory.data.slice(2, 6)]))
+  }
+
+  if (role.includes("Mobile")) {
+    skills.push(
+      ...seededChoice(seed + 1400, [skillsByCategory.mobile.slice(0, 3), skillsByCategory.mobile.slice(1, 4)]),
+    )
+  }
+
+  // Add database and cloud skills
+  skills.push(...skillsByCategory.database.slice(0, 2))
+  skills.push(...skillsByCategory.cloud.slice(0, 3))
+
+  // Remove duplicates and return
+  return [...new Set(skills)].slice(0, 12)
+}
+
+export function generateCVData(id: string): CVProfile {
+  // Check if CV already exists in storage
+  if (cvStorage.has(id)) {
+    return cvStorage.get(id)!
+  }
+
+  // Parse seed from ID
+  const seed = Number.parseInt(id.split("-")[1]) || Math.floor(Math.random() * 10000)
+
+  // Generate gender and age
+  const gender = seededRandom(seed) > 0.5 ? "male" : "female"
+  const age = seededRandomInt(seed + 50, 25, 44)
+  const experienceYears = seededRandomInt(seed + 60, 3, Math.min(15, age - 22))
+
+  // Generate name based on gender
+  const name = gender === "male" ? seededChoice(seed + 10, maleNames) : seededChoice(seed + 20, femaleNames)
+
+  // Generate role and other details
+  const role = seededChoice(seed + 30, techRoles)
+  const profileImageUrl = generateProfileImageUrl(seed + 40, gender, age)
+
+  // Generate email from name
+  const emailName = name
+    .toLowerCase()
+    .replace(/\s+/g, ".")
+    .replace(/[áàä]/g, "a")
+    .replace(/[éèë]/g, "e")
+    .replace(/[íìï]/g, "i")
+    .replace(/[óòö]/g, "o")
+    .replace(/[úùü]/g, "u")
+  const emailDomains = ["gmail.com", "outlook.com", "yahoo.com", "hotmail.com"]
+  const email = `${emailName}@${seededChoice(seed + 70, emailDomains)}`
+
+  // Generate phone
+  const phone = `+34 ${seededRandomInt(seed + 80, 600, 699)} ${seededRandomInt(seed + 90, 100, 999)} ${seededRandomInt(seed + 95, 100, 999)}`
+
+  // Generate skills and experience
+  const skills = generateSkills(role, seed)
+  const experience = generateExperience(role, experienceYears, seed)
+  const education = generateEducation(seed)
+
+  // Extract companies from experience
+  const companies = experience.map((exp) => exp.company)
+  const university = education[0]?.institution || ""
+
+  const cv: CVProfile = {
+    id,
     name,
     role,
-    email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@email.com`,
-    phone: `+34 ${Math.floor(Math.random() * 900) + 600} ${Math.floor(Math.random() * 900) + 100} ${Math.floor(Math.random() * 900) + 100}`,
+    email,
+    phone,
     location: "Barcelona, Spain",
     profileImageUrl,
-    summary: `Experienced ${role} with ${experienceYears} years of expertise in modern technologies and best practices. Passionate about delivering high-quality solutions and driving innovation.`,
-    skills,
+    summary: generateSummary(role, experienceYears, skills, seed),
     experience,
     education,
-    languages: ["Spanish (Native)", "English (Fluent)", "Catalan (Native)"],
-    certifications: ["AWS Certified", "Scrum Master Certified"],
-    experienceYears: experienceYears.toString(),
-    type: "generated",
-    createdAt: new Date().toISOString(),
+    skills,
+    languages: ["Spanish (Native)", "English (Fluent)", "Catalan (Fluent)"],
+    linkedin: `https://linkedin.com/in/${emailName}`,
+    github: `https://github.com/${emailName.split(".")[0]}`,
+    portfolio: `https://${emailName.split(".")[0]}.dev`,
+    gender,
+    age,
+    experienceYears,
+    companies,
+    university,
+  }
+
+  // Store in memory
+  cvStorage.set(id, cv)
+  console.log(`Generated and stored CV: ${cv.name} (${cv.id})`)
+
+  return cv
+}
+
+export function addToLibrary(cvData: CVProfile): void {
+  cvStorage.set(cvData.id, cvData)
+  console.log(`Added CV to library: ${cvData.name} (${cvData.id})`)
+}
+
+export function getCVProfile(id: string): CVProfile | null {
+  const cv = cvStorage.get(id)
+  if (cv) {
+    console.log(`Retrieved CV from library: ${cv.name} (${cv.id})`)
+    return cv
+  } else {
+    console.log(`CV not found in library: ${id}`)
+    return null
   }
 }
 
-// Add CV to library
-export function addToLibrary(cv: any) {
-  cvLibrary.push({
-    ...cv,
-    addedAt: new Date().toISOString(),
+export function getAllCVs(): CVProfile[] {
+  const cvs = Array.from(cvStorage.values())
+  console.log(`Retrieved ${cvs.length} CVs from library`)
+  return cvs
+}
+
+export function deleteCVProfile(id: string): boolean {
+  const deleted = cvStorage.delete(id)
+  if (deleted) {
+    console.log(`Deleted CV from library: ${id}`)
+  } else {
+    console.log(`Failed to delete CV (not found): ${id}`)
+  }
+  return deleted
+}
+
+export function searchCVs(query: string): CVProfile[] {
+  const allCVs = getAllCVs()
+  const searchTerms = query.toLowerCase().split(" ")
+
+  return allCVs.filter((cv) => {
+    const searchableText =
+      `${cv.name} ${cv.role} ${cv.skills.join(" ")} ${cv.companies?.join(" ") || ""} ${cv.summary}`.toLowerCase()
+    return searchTerms.some((term) => searchableText.includes(term))
   })
-  console.log(`Added CV to library: ${cv.name} (Total: ${cvLibrary.length})`)
-}
-
-// Alternative name for compatibility
-export function addCVToLibrary(cv: any) {
-  return addToLibrary(cv)
-}
-
-// Get all CVs from library
-export function getLibraryCVs() {
-  return cvLibrary.sort(
-    (a, b) => new Date(b.addedAt || b.createdAt || 0).getTime() - new Date(a.addedAt || a.createdAt || 0).getTime(),
-  )
-}
-
-// Alternative name for compatibility
-export function getCVLibrary() {
-  return getLibraryCVs()
-}
-
-// Get library status
-export function getLibraryStatus() {
-  const total = cvLibrary.length
-  const generated = cvLibrary.filter((cv) => cv.type === "generated").length
-  const uploaded = cvLibrary.filter((cv) => cv.type === "uploaded").length
-
-  return {
-    total,
-    generated,
-    uploaded,
-    lastUpdated:
-      cvLibrary.length > 0
-        ? Math.max(...cvLibrary.map((cv) => new Date(cv.addedAt || cv.createdAt || 0).getTime()))
-        : null,
-  }
-}
-
-// Get CV by ID
-export function getCVById(id: string) {
-  return cvLibrary.find((cv) => cv.id === id)
-}
-
-// Delete CV from library
-export function deleteCVFromLibrary(id: string) {
-  const index = cvLibrary.findIndex((cv) => cv.id === id)
-  if (index !== -1) {
-    cvLibrary.splice(index, 1)
-    return true
-  }
-  return false
-}
-
-// Alternative name for compatibility
-export function removeCVFromLibrary(id: string) {
-  return deleteCVFromLibrary(id)
-}
-
-// Update CV in library
-export function updateCVInLibrary(id: string, updates: any) {
-  const index = cvLibrary.findIndex((cv) => cv.id === id)
-  if (index !== -1) {
-    cvLibrary[index] = { ...cvLibrary[index], ...updates, updatedAt: new Date().toISOString() }
-    return cvLibrary[index]
-  }
-  return null
-}
-
-// Get design template for PDF generation
-export function getPDFDesignTemplate(templateId = "modern") {
-  const templates = {
-    modern: {
-      colors: {
-        primary: "#2563eb",
-        secondary: "#64748b",
-        accent: "#f1f5f9",
-      },
-      fonts: {
-        heading: "Inter, sans-serif",
-        body: "Inter, sans-serif",
-      },
-      layout: "single-column",
-    },
-    professional: {
-      colors: {
-        primary: "#1f2937",
-        secondary: "#6b7280",
-        accent: "#f9fafb",
-      },
-      fonts: {
-        heading: "Inter, sans-serif",
-        body: "Inter, sans-serif",
-      },
-      layout: "two-column",
-    },
-    creative: {
-      colors: {
-        primary: "#7c3aed",
-        secondary: "#a78bfa",
-        accent: "#f3f4f6",
-      },
-      fonts: {
-        heading: "Inter, sans-serif",
-        body: "Inter, sans-serif",
-      },
-      layout: "creative",
-    },
-  }
-
-  return templates[templateId] || templates.modern
-}
-
-// Alternative name for compatibility
-export function getDesignTemplate(templateId = "modern") {
-  return getPDFDesignTemplate(templateId)
-}
-
-// Search CVs
-export function searchCVs(query: string) {
-  const queryLower = query.toLowerCase()
-  return cvLibrary.filter((cv) => {
-    return (
-      cv.name?.toLowerCase().includes(queryLower) ||
-      cv.role?.toLowerCase().includes(queryLower) ||
-      cv.skills?.some((skill: string) => skill.toLowerCase().includes(queryLower)) ||
-      cv.summary?.toLowerCase().includes(queryLower) ||
-      cv.content?.toLowerCase().includes(queryLower)
-    )
-  })
-}
-
-// Alternative name for compatibility
-export function searchLibrary(query: string) {
-  return searchCVs(query)
-}
-
-// Clear library (for testing)
-export function clearLibrary() {
-  cvLibrary = []
-  console.log("Library cleared")
-}
-
-// Export default for compatibility
-export default {
-  generateCVData,
-  addToLibrary,
-  addCVToLibrary,
-  getLibraryCVs,
-  getCVLibrary,
-  getLibraryStatus,
-  getCVById,
-  deleteCVFromLibrary,
-  removeCVFromLibrary,
-  updateCVInLibrary,
-  getPDFDesignTemplate,
-  getDesignTemplate,
-  searchCVs,
-  searchLibrary,
-  clearLibrary,
 }

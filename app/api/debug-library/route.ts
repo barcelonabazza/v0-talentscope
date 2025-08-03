@@ -1,29 +1,30 @@
 import { NextResponse } from "next/server"
-import { getLibraryStatus, getLibraryCVs } from "@/lib/cv-data"
+import { getAllCVs } from "@/lib/cv-data"
 
 export async function GET() {
   try {
-    const status = getLibraryStatus()
-    const cvs = getLibraryCVs()
+    const cvs = getAllCVs()
 
     return NextResponse.json({
-      status: "Library Debug Info",
-      librarySize: status.size,
+      message: "Debug CV Library",
       totalCVs: cvs.length,
-      cvSummary: cvs.map((cv) => ({
+      cvs: cvs.map((cv) => ({
         id: cv.id,
         name: cv.name,
-        type: cv.type,
-        hasContent: !!cv.content,
-        addedAt: cv.addedToLibrary || cv.createdAt,
+        role: cv.role,
+        hasProfileImage: !!cv.profileImageUrl,
+        skillsCount: cv.skills?.length || 0,
+        experienceCount: cv.experience?.length || 0,
+        educationCount: cv.education?.length || 0,
       })),
-      fullStatus: status,
+      storageKeys: cvs.map((cv) => cv.id),
     })
   } catch (error) {
+    console.error("Error in debug-library route:", error)
     return NextResponse.json(
       {
-        error: error.message,
-        stack: error.stack,
+        error: "Failed to debug library",
+        message: error.message,
       },
       { status: 500 },
     )

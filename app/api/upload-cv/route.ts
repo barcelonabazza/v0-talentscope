@@ -504,6 +504,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Only PDF files are allowed" }, { status: 400 })
     }
 
+    // Increased file size limit to 100MB
+    if (file.size > 100 * 1024 * 1024) {
+      return NextResponse.json({ error: "File size exceeds 100MB limit" }, { status: 400 })
+    }
+
     console.log("Processing uploaded file:", file.name, "Size:", file.size)
 
     // Create uploads directory

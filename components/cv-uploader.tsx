@@ -449,7 +449,8 @@ export default function CVUploader() {
         <h3 className="font-semibold text-green-900 mb-2">CV Upload & Processing</h3>
         <p className="text-sm text-green-800">
           Upload PDF CVs to extract text content, add them to the searchable database, and make them available in the CV
-          Library. All uploaded CVs are automatically processed and can be queried via the Chat Interface.
+          Library. All uploaded CVs are automatically processed and can be queried via the Chat Interface. Maximum file
+          size: 100MB.
         </p>
       </div>
 
@@ -471,7 +472,7 @@ export default function CVUploader() {
             Select Files
           </label>
         </Button>
-        <p className="text-xs text-gray-500 mt-2">Only PDF files are supported</p>
+        <p className="text-xs text-gray-500 mt-2">Only PDF files are supported (Max: 100MB per file)</p>
       </div>
 
       {/* File List */}

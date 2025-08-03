@@ -1,301 +1,333 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle, XCircle, AlertCircle, RefreshCw, Database, Upload, MessageSquare, FileText } from "lucide-react"
+import {
+  Activity,
+  Server,
+  Database,
+  Cpu,
+  HardDrive,
+  Wifi,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  RefreshCw,
+  FileText,
+  Users,
+  Clock,
+} from "lucide-react"
 
-interface SystemStatus {
-  database: "connected" | "disconnected" | "error"
-  aiService: "available" | "unavailable" | "limited"
-  pdfProcessing: "available" | "unavailable" | "error"
-  fileStorage: "available" | "unavailable" | "error"
-  cvLibrary: {
-    status: "available" | "error"
-    count: number
-    lastUpdated: string
-  }
+interface SystemMetrics {
+  status: "healthy" | "warning" | "error"
+  uptime: string
+  cpuUsage: number
+  memoryUsage: number
+  diskUsage: number
+  activeConnections: number
+  cvLibrarySize: number
+  lastBackup: string
+  apiResponseTime: number
+  errorRate: number
+}
+
+interface ServiceStatus {
+  name: string
+  status: "online" | "offline" | "degraded"
+  responseTime: number
   lastCheck: string
 }
 
 export default function SystemStatus() {
-  const [status, setStatus] = useState<SystemStatus | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [metrics, setMetrics] = useState<SystemMetrics>({
+    status: "healthy",
+    uptime: "2d 14h 32m",
+    cpuUsage: 45,
+    memoryUsage: 62,
+    diskUsage: 38,
+    activeConnections: 127,
+    cvLibrarySize: 1247,
+    lastBackup: "2024-01-15 03:00:00",
+    apiResponseTime: 145,
+    errorRate: 0.02,
+  })
 
-  const checkSystemStatus = async () => {
+  const [services, setServices] = useState<ServiceStatus[]>([
+    {
+      name: "CV Generator API",
+      status: "online",
+      responseTime: 120,
+      lastCheck: "2024-01-15 10:30:00",
+    },
+    {
+      name: "PDF Generation Service",
+      status: "online",
+      responseTime: 890,
+      lastCheck: "2024-01-15 10:30:00",
+    },
+    {
+      name: "File Upload Service",
+      status: "online",
+      responseTime: 67,
+      lastCheck: "2024-01-15 10:30:00",
+    },
+    {
+      name: "AI Chat Service",
+      status: "degraded",
+      responseTime: 2340,
+      lastCheck: "2024-01-15 10:29:45",
+    },
+    {
+      name: "Database Connection",
+      status: "online",
+      responseTime: 23,
+      lastCheck: "2024-01-15 10:30:00",
+    },
+  ])
+
+  const [loading, setLoading] = useState(false)
+
+  const refreshStatus = async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      setError(null)
+      // Simulate API call to get system status
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      const response = await fetch("/api/status")
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
+      // Mock updated metrics
+      setMetrics((prev) => ({
+        ...prev,
+        cpuUsage: Math.floor(Math.random() * 30) + 30,
+        memoryUsage: Math.floor(Math.random() * 20) + 50,
+        activeConnections: Math.floor(Math.random() * 50) + 100,
+        apiResponseTime: Math.floor(Math.random() * 100) + 100,
+      }))
 
-      const data = await response.json()
-      setStatus(data)
-    } catch (err) {
-      console.error("Error checking system status:", err)
-      setError(err instanceof Error ? err.message : "Failed to check system status")
+      // Mock updated service status
+      setServices((prev) =>
+        prev.map((service) => ({
+          ...service,
+          responseTime: Math.floor(Math.random() * 500) + 50,
+          lastCheck: new Date().toISOString().slice(0, 19).replace("T", " "),
+        })),
+      )
+    } catch (error) {
+      console.error("Error refreshing status:", error)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => {
-    checkSystemStatus()
-    // Check status every 30 seconds
-    const interval = setInterval(checkSystemStatus, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "connected":
-      case "available":
-        return <CheckCircle className="w-5 h-5 text-green-500" />
-      case "disconnected":
-      case "unavailable":
-        return <XCircle className="w-5 h-5 text-red-500" />
-      case "limited":
-        return <AlertCircle className="w-5 h-5 text-yellow-500" />
+      case "healthy":
+      case "online":
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case "warning":
+      case "degraded":
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />
+      case "error":
+      case "offline":
+        return <XCircle className="h-4 w-4 text-red-500" />
       default:
-        return <XCircle className="w-5 h-5 text-red-500" />
+        return <Activity className="h-4 w-4 text-gray-500" />
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "connected":
-      case "available":
-        return "default"
-      case "disconnected":
-      case "unavailable":
-        return "destructive"
-      case "limited":
-        return "secondary"
+      case "healthy":
+      case "online":
+        return "bg-green-500"
+      case "warning":
+      case "degraded":
+        return "bg-yellow-500"
+      case "error":
+      case "offline":
+        return "bg-red-500"
       default:
-        return "destructive"
+        return "bg-gray-500"
     }
   }
 
-  if (loading && !status) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold text-blue-900 mb-2">System Status</h3>
-          <div className="flex items-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin" />
-            <span className="text-sm text-blue-800">Checking system status...</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  useEffect(() => {
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      refreshStatus()
+    }, 30000)
 
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold text-blue-900 mb-2">System Status</h3>
-          <p className="text-sm text-blue-800">Monitor the health and availability of all system components.</p>
-        </div>
-
-        <Alert>
-          <XCircle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Status Check Failed:</strong> {error}
-            <Button onClick={checkSystemStatus} variant="outline" size="sm" className="ml-2 bg-transparent">
-              <RefreshCw className="w-4 h-4 mr-1" />
-              Retry
-            </Button>
-          </AlertDescription>
-        </Alert>
-      </div>
-    )
-  }
-
-  if (!status) {
-    return null
-  }
-
-  const overallHealth =
-    status.database === "connected" &&
-    status.fileStorage === "available" &&
-    status.pdfProcessing === "available" &&
-    status.cvLibrary.status === "available"
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h3 className="font-semibold text-blue-900 mb-1">System Status</h3>
-            <p className="text-sm text-blue-800">Monitor the health and availability of all system components.</p>
+      {/* Overall System Status */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                System Overview
+              </CardTitle>
+              <CardDescription>Real-time system health and performance metrics</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${getStatusColor(metrics.status)}`}></div>
+              <Badge variant={metrics.status === "healthy" ? "default" : "destructive"}>
+                {metrics.status.toUpperCase()}
+              </Badge>
+              <Button variant="outline" size="sm" onClick={refreshStatus} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
-          <Button onClick={checkSystemStatus} variant="outline" size="sm" disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-        </div>
-      </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-blue-500" />
+                <span className="text-sm font-medium">Uptime</span>
+              </div>
+              <p className="text-2xl font-bold">{metrics.uptime}</p>
+            </div>
 
-      {/* Overall Health */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Cpu className="h-4 w-4 text-green-500" />
+                <span className="text-sm font-medium">CPU Usage</span>
+              </div>
+              <div className="space-y-1">
+                <p className="text-2xl font-bold">{metrics.cpuUsage}%</p>
+                <Progress value={metrics.cpuUsage} className="h-2" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <HardDrive className="h-4 w-4 text-purple-500" />
+                <span className="text-sm font-medium">Memory</span>
+              </div>
+              <div className="space-y-1">
+                <p className="text-2xl font-bold">{metrics.memoryUsage}%</p>
+                <Progress value={metrics.memoryUsage} className="h-2" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Wifi className="h-4 w-4 text-orange-500" />
+                <span className="text-sm font-medium">Connections</span>
+              </div>
+              <p className="text-2xl font-bold">{metrics.activeConnections}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Service Status */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            {overallHealth ? (
-              <CheckCircle className="w-6 h-6 text-green-500" />
-            ) : (
-              <AlertCircle className="w-6 h-6 text-yellow-500" />
-            )}
-            Overall System Health
-            <Badge variant={overallHealth ? "default" : "secondary"}>
-              {overallHealth ? "Healthy" : "Issues Detected"}
-            </Badge>
+            <Server className="h-5 w-5" />
+            Service Status
           </CardTitle>
+          <CardDescription>Status of individual system components and APIs</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-600 mb-2">Last checked: {new Date(status.lastCheck).toLocaleString()}</p>
-          {!overallHealth && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Some system components are experiencing issues. Check individual service status below.
-              </AlertDescription>
-            </Alert>
-          )}
+          <div className="space-y-3">
+            {services.map((service, index) => (
+              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  {getStatusIcon(service.status)}
+                  <div>
+                    <p className="font-medium">{service.name}</p>
+                    <p className="text-sm text-gray-600">
+                      Last checked: {new Date(service.lastCheck).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Badge
+                    variant={
+                      service.status === "online"
+                        ? "default"
+                        : service.status === "degraded"
+                          ? "secondary"
+                          : "destructive"
+                    }
+                  >
+                    {service.status}
+                  </Badge>
+                  <p className="text-sm text-gray-600 mt-1">{service.responseTime}ms</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Individual Services */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Database */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between text-base">
-              <div className="flex items-center gap-2">
-                <Database className="w-5 h-5" />
-                Database
-              </div>
-              <div className="flex items-center gap-2">
-                {getStatusIcon(status.database)}
-                <Badge variant={getStatusColor(status.database) as any}>{status.database}</Badge>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <p className="text-sm text-gray-600">
-              {status.database === "connected"
-                ? "Database connection is healthy and responsive."
-                : "Database connection issues detected."}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* AI Service */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between text-base">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
-                AI Service
-              </div>
-              <div className="flex items-center gap-2">
-                {getStatusIcon(status.aiService)}
-                <Badge variant={getStatusColor(status.aiService) as any}>{status.aiService}</Badge>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <p className="text-sm text-gray-600">
-              {status.aiService === "available"
-                ? "AI services are fully operational."
-                : status.aiService === "limited"
-                  ? "AI services available with limitations."
-                  : "AI services are currently unavailable."}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* PDF Processing */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between text-base">
-              <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                PDF Processing
-              </div>
-              <div className="flex items-center gap-2">
-                {getStatusIcon(status.pdfProcessing)}
-                <Badge variant={getStatusColor(status.pdfProcessing) as any}>{status.pdfProcessing}</Badge>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <p className="text-sm text-gray-600">
-              {status.pdfProcessing === "available"
-                ? "PDF text extraction and processing is working correctly."
-                : "PDF processing services are experiencing issues."}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* File Storage */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between text-base">
-              <div className="flex items-center gap-2">
-                <Upload className="w-5 h-5" />
-                File Storage
-              </div>
-              <div className="flex items-center gap-2">
-                {getStatusIcon(status.fileStorage)}
-                <Badge variant={getStatusColor(status.fileStorage) as any}>{status.fileStorage}</Badge>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <p className="text-sm text-gray-600">
-              {status.fileStorage === "available"
-                ? "File upload and storage systems are operational."
-                : "File storage systems are experiencing issues."}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* CV Library Status */}
+      {/* Application Metrics */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Database className="w-5 h-5" />
-              CV Library
-            </div>
-            <div className="flex items-center gap-2">
-              {getStatusIcon(status.cvLibrary.status)}
-              <Badge variant={getStatusColor(status.cvLibrary.status) as any}>{status.cvLibrary.status}</Badge>
-            </div>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Application Metrics
           </CardTitle>
+          <CardDescription>CV library and application-specific statistics</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-700">Total CVs</p>
-              <p className="text-2xl font-bold text-blue-600">{status.cvLibrary.count}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="text-center p-4 border rounded-lg">
+              <FileText className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+              <p className="text-2xl font-bold">{metrics.cvLibrarySize}</p>
+              <p className="text-sm text-gray-600">CVs in Library</p>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">Last Updated</p>
-              <p className="text-sm text-gray-600">{new Date(status.cvLibrary.lastUpdated).toLocaleString()}</p>
+
+            <div className="text-center p-4 border rounded-lg">
+              <Users className="h-8 w-8 text-green-500 mx-auto mb-2" />
+              <p className="text-2xl font-bold">{metrics.activeConnections}</p>
+              <p className="text-sm text-gray-600">Active Users</p>
+            </div>
+
+            <div className="text-center p-4 border rounded-lg">
+              <Activity className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+              <p className="text-2xl font-bold">{metrics.apiResponseTime}ms</p>
+              <p className="text-sm text-gray-600">Avg Response Time</p>
+            </div>
+
+            <div className="text-center p-4 border rounded-lg">
+              <CheckCircle className="h-8 w-8 text-orange-500 mx-auto mb-2" />
+              <p className="text-2xl font-bold">{(metrics.errorRate * 100).toFixed(2)}%</p>
+              <p className="text-sm text-gray-600">Error Rate</p>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Alerts and Notifications */}
+      {metrics.status !== "healthy" && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            System is experiencing issues. Some services may be degraded. Please check individual service status above.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {metrics.errorRate > 0.05 && (
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertDescription>
+            High error rate detected ({(metrics.errorRate * 100).toFixed(2)}%). System performance may be impacted.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   )
 }

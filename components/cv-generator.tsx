@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,7 +36,7 @@ interface GenerationProgress {
   error?: string
 }
 
-// CV Preview Component - Fixed to handle HTML preview properly
+// CV Preview Component
 function CVPreviewContent({ cvId }: { cvId: string }) {
   const [cvData, setCvData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -49,7 +48,6 @@ function CVPreviewContent({ cvId }: { cvId: string }) {
         setLoading(true)
         setError(null)
 
-        // Fetch the HTML content
         const response = await fetch(`/api/cv-preview-html/${cvId}`)
         if (!response.ok) {
           throw new Error(`Failed to load preview: ${response.status}`)
@@ -149,6 +147,8 @@ export default function CVGenerator() {
       })
 
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error("API Error:", errorText)
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
